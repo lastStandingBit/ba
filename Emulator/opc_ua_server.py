@@ -1,3 +1,6 @@
+from conveyor_model import*
 
+class OpcuaServer:
 
-class OpcuaServer(self, model : ConveyorModel)
+    def __init__(self, model : ConveyorModel):
+        pass

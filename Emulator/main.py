@@ -1,8 +1,10 @@
-from .conveyor_model import*
+from .opc_ua_server import *
+import asyncio
+
+from .conveyor_model import *
 from .interface_settings import*
 
-from opc_ua_server import *
-import asyncio
+
 
 async def async_main() -> None:
     model = ConveyorModel(Default_PlantParameter, Default_RuntimeParameter)

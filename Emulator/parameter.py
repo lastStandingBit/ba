@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from item import *
 
 @dataclass
 class PlantParameter: # Feste Anlageparameter
@@ -18,7 +19,7 @@ class RuntimeParameter: # einstellbare Laufzeitparameter von Dt einstellbar
     run: bool = False  # run förderband
     main_speed: float = 0.5 # m/s
     routing_mode: str = "ROUND_ROBIN"
-    target_lane: int = 1
+    target_lane: str = SUBLANE1
     
 Default_RuntimeParameter = RuntimeParameter()
 
