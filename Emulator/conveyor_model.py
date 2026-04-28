@@ -1,7 +1,7 @@
-from dataclasses import dataclass
-from .item import *
-from .parameter import *
+from .plant_parameter import *
+from .runtime_parameter import *
 from .kpi_state import *
+from .item import *
 from .interface_settings import *
 
 class ConveyorModel:
@@ -11,12 +11,12 @@ class ConveyorModel:
         self.plant = plant 
         # Standard ControlParameter gespeichert
         self.runtime = RuntimeParameter(run = runtime.run,
-                                        main_speed = runtime.main_speed,
+                                        lane_speed = runtime.lane_speed,
                                         routing_mode = runtime.routing_mode,
                                         target_lane = runtime.target_lane) 
         # aktive Controlparameter
         self.active_Runtime = RuntimeParameter (run = runtime.run, 
-                                                main_speed = runtime.main_speed,
+                                                lane_speed = runtime.lane_speed,
                                                 routing_mode = runtime.routing_mode, 
                                                 target_lane = runtime.target_lane)
         
@@ -53,7 +53,7 @@ class ConveyorModel:
         self.last_event = "reset"
         # aktuelle bedienung wieder auf standard gesetzt
         self.active_Runtime.run = self.runtime.run
-        self.active_Runtime.main_speed = self.runtime.main_speed
+        self.active_Runtime.lane_speed = self.runtime.lane_speed
         self.active_Runtime.routing_mode = self.runtime.routing_mode
         self.active_Runtime.target_lane = self.runtime.target_lane
     
@@ -68,7 +68,7 @@ class ConveyorModel:
             self.state = STATE_STOPPED
             self.last_event = "run_OFF"
 
-    def current_kpi_snapshot(self) -> dict[str,int]:
+    def current_kpi_state(self) -> dict[str,int]:
         return {
             "throughput_all" : self.kpis.throughput_all,
             "throughput_sublane1" : self.kpis.throughput_lane_1,
@@ -83,15 +83,18 @@ class ConveyorModel:
        #nächstes item definieren, dann liste appenden
        self.next_item_id += 1
        self.items_list.append(item)
-       self.last_event = f"item :{item.item_id}" 
+       self.last_event = f"Item-Nr : {item.item_id}" 
 
     def create_item_loop(self) -> None:
         if self.tick_counter > 0 and self.tick_counter % self.ticks_per_item == 0: # erst nach 0 ticks beginnt, also nach 1 sekunde kommt erstes item
             self.create_item()
+            
+    def update_kpis(self) -> None:
+        self.kpis.wip = len(self.items_list)
 
     def item_on_main(self) -> None:
         for item in self.items_list:
-            item.distance += self.active_Runtime.main_speed * self.plant.tick # Pos. Fortschrittsformel : x_2 = x_1 + v * delta t
+            item.distance += self.active_Runtime.lane_speed * self.plant.tick # Pos. Fortschrittsformel : x_2 = x_1 + v * delta t
             # Problem gefunden : wie auf item distance zugreifen wenn item nicht erzeugt
             # problem : wann muss diese methode denn aufgerufen werden?
             if item.distance >= self.plant.diverter_position:
@@ -118,7 +121,7 @@ class ConveyorModel:
             return # wenn modell nicht läuft, nichts machen, wieso sollten simulationsschritte weiter laufen? logisch
 
 
-    def status_snapshot(self) -> dict[str, object]:
+    def current_status_state(self) -> dict[str, object]:
         return{
             "state" : self.state,
             "simulation_time": self.simulation_time,
@@ -126,20 +129,16 @@ class ConveyorModel:
             "last_event": self.last_event
         }
     
-    def select_lane(self) -> str:
+    def select_lane(self) -> int:
         if self.active_Runtime.routing_mode == ROUTING_TARGET:
             return self.active_Runtime.target_lane
         
         else:
-            if self.rr_rotation == 0:
-                self.rr_rotation = 1
-                return SUBLANE1
-            elif self.rr_rotation == 1:
-                self.rr_rotation = 2
-                return SUBLANE2
-            else:
-                self.rr_rotation = 0
-                return SUBLANE3
+            lane = (self.rr_rotation % 3)+1 # 1-lane1, 2-lane2,3-lane3  
+            self.rr_rotation +=1
+            return lane
+    
+
 
 
         

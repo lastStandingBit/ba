@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 
-MAIN = "main"
-SUBLANE1 = "sublane1"
-SUBLANE2 = "sublane2"
-SUBLANE3 = "sublane3"
+MAIN = 0
+SUBLANE1 = 1
+SUBLANE2 = 2
+SUBLANE3 = 3
 
 @dataclass
 class Item: # Ein Item / Stückgut
 
     item_id: int
     creation_time: float 
-    lane: str = MAIN
+    lane: int = MAIN
     distance: float = 0.0
