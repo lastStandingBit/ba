@@ -26,6 +26,7 @@ class ConveyorModel:
         self.tick_counter = 0
         self.simulation_time = 0.0
         self.items_list = [] # leert itemliste
+        self.items_list_to_remove = []
         self.kpis = KpiState() # alle kpis auf standard
         self.next_item_id = 1
         self.item_creation_period = 0.0 # quelltimer neu
@@ -117,6 +118,7 @@ class ConveyorModel:
             self.create_item_loop() # ruft item erzeugung auf, agiert also quasi als quelle und wird durch simulations_step aufgerufen und quelle zum zeitlichen modellablauf gehört
             # hier direkt aufs main band?
             self.item_on_main()
+            self.item_on_sublane()
         else:
             return # wenn modell nicht läuft, nichts machen, wieso sollten simulationsschritte weiter laufen? logisch
 
@@ -137,6 +139,31 @@ class ConveyorModel:
             lane = (self.rr_rotation % 3)+1 # 1-lane1, 2-lane2,3-lane3  
             self.rr_rotation +=1
             return lane
+    
+    def item_on_sublane(self) -> None:
+
+        for item in self.items_list:
+            if item.lane == MAIN:
+                continue
+            item.distance += self.active_Runtime.lane_speed * self.plant.tick
+
+            if item.distance >= self.plant.sub_length:
+                self.kpis.throughput_all += 1
+
+                if item.lane == SUBLANE1:
+                    self.kpis.throughput_lane_1 +=1
+                elif item.lane == SUBLANE2:
+                    self.kpis.throughput_lane_2 +=1
+                elif item.lane == SUBLANE3:
+                    self.kpis.throughput_lane_3 +=1
+
+                self.items_list_to_remove.append(item)
+                self.last_event = f"item{item.item_id} out of lane {item.lane}"
+        
+        for item in self.items_list_to_remove:
+            self.items_list.remove(item)
+
+
     
 
 
